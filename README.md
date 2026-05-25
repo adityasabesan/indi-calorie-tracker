@@ -26,6 +26,17 @@ Indi Calorie Tracker is a browser-based nutrition tracking application designed 
 
 ---
 
+## 📸 Interface Preview
+
+### Main Screen
+![Main UI](indicalorietracker.ss1.png)
+
+### Food Tracking
+![Food UI](indicalorietracker.ss2.png)
+
+### Macro View
+![Macros](indicalorietracker.ss3.png)
+
 ## 🛠 Tech Stack
 
 - HTML5 – Structure
