@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="theme-color" content="#06060a"/>
+  <title>IndiCalorieTracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html{background:#06060a;height:100%}
+    body{background:#06060a;color:#ffffff;font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    #root{min-height:100vh}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:#0a0a0f}::-webkit-scrollbar-thumb{background:#00e5ff55;border-radius:3px}
+
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    @keyframes slideDown{from{transform:translateY(-12px);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes scanMove{0%{top:0;opacity:0}5%{opacity:1}95%{opacity:1}100%{top:100%;opacity:0}}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    @keyframes toastIn{0%{transform:translateY(-40px) scale(.94);opacity:0}70%{transform:translateY(4px) scale(1.02)}100%{transform:translateY(0) scale(1);opacity:1}}
+    @keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-20px)}}
+    @keyframes borderGlow{0%,100%{box-shadow:0 0 20px rgba(0,229,255,.1),0 0 40px rgba(0,229,255,.04)}50%{box-shadow:0 0 50px rgba(0,229,255,.28),0 0 80px rgba(0,229,255,.1)}}
+    @keyframes progressBar{from{width:0}to{width:100%}}
+    @keyframes cardPop{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+    @keyframes neonPulse{0%,100%{opacity:1}50%{opacity:.7}}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    @keyframes stickyIn{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+    .app-root{background:#06060a;min-height:100vh;position:relative}
+    .app-root::before{content:'';position:fixed;top:-30%;left:-20%;width:55%;height:55%;background:radial-gradient(ellipse,#00e5ff0e 0%,transparent 70%);pointer-events:none;z-index:0}
+    .app-root::after{content:'';position:fixed;bottom:-20%;right:-15%;width:45%;height:45%;background:radial-gradient(ellipse,#7c3aed10 0%,transparent 70%);pointer-events:none;z-index:0}
+
+    /* ── Header ── */
+    .header{position:sticky;top:0;z-index:100;background:rgba(6,6,10,.97);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-bottom:1px solid rgba(0,229,255,.18);padding:10px 16px 9px;box-shadow:0 4px 30px rgba(0,0,0,.6),0 1px 0 rgba(0,229,255,.08)}
+    .brand{font-family:'Orbitron',monospace;font-weight:900;font-size:18px;letter-spacing:.5px;line-height:1}
+    .brand-sub{font-size:9px;letter-spacing:3px;color:#a0aec0;text-transform:uppercase;margin-top:2px;font-family:'Roboto Mono',monospace}
+
+    /* ── Glass card ── */
+    .glass-card{background:rgba(255,255,255,.04);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(0,229,255,.2);border-radius:20px;box-shadow:0 0 50px rgba(0,229,255,.08),0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08);position:relative;overflow:hidden}
+    .glass-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.55),transparent)}
+    .scan-line{position:absolute;left:0;right:0;height:1px;z-index:1;background:linear-gradient(90deg,transparent,rgba(0,229,255,.35),transparent);animation:scanMove 6s linear infinite;pointer-events:none}
+
+    /* ── Search ── */
+    .search-wrap{position:relative;margin-bottom:14px}
+    .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;opacity:.8}
+    .search-input{width:100%;padding:13px 16px 13px 42px;background:rgba(0,0,0,.55);border:1px solid rgba(0,229,255,.25);border-radius:16px;color:#ffffff;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;outline:none;transition:border-color .25s,box-shadow .25s,background .25s;-webkit-appearance:none;appearance:none}
+    .search-input:focus{border-color:rgba(0,229,255,.65);box-shadow:0 0 24px rgba(0,229,255,.18),inset 0 0 12px rgba(0,229,255,.04);background:rgba(0,0,0,.7)}
+    .search-input::placeholder{color:#718096;font-weight:500}
+    .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.1);color:#e2e8f0;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .search-clear:active{transform:translateY(-50%) scale(.85)}
+    .search-clear:hover{background:rgba(255,77,109,.2);border-color:rgba(255,77,109,.4);color:#ff4d6d}
+
+    /* ── Tabs ── */
+    .tabs-row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px;padding-bottom:2px}
+    .tabs-row::-webkit-scrollbar{display:none}
+    .tab-btn{flex-shrink:0;padding:8px 16px;border-radius:22px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#cbd5e0;cursor:pointer;transition:all .22s;white-space:nowrap;min-height:36px}
+    .tab-btn:active{transform:scale(.93)}
+    .tab-btn.active{background:rgba(0,229,255,.15);border-color:rgba(0,229,255,.55);color:#00e5ff;box-shadow:0 0 18px rgba(0,229,255,.2),inset 0 0 8px rgba(0,229,255,.06)}
+
+    /* ── Category ── */
+    .cat-head{display:flex;align-items:center;gap:8px;padding:16px 0 10px}
+    .cat-label{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;font-weight:700;text-transform:uppercase}
+    .cat-line{flex:1;height:1px}
+
+    /* ── Food grid ── */
+    .food-grid{display:grid;grid-template-columns:1fr;gap:10px}
+
+    /* ── Food card ── */
+    .food-card{border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);padding:14px 15px;display:flex;flex-direction:column;gap:10px;position:relative;transition:border-color .25s,background .25s,box-shadow .25s;-webkit-user-select:none;user-select:none;min-height:72px;touch-action:manipulation}
+    .food-card.active{background:rgba(0,229,255,.07);box-shadow:inset 0 0 20px rgba(0,229,255,.04)}
+    .card-top{display:flex;align-items:flex-start;gap:12px}
+    .food-info{flex:1;min-width:0}
+    .food-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;line-height:1.3;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .food-card.active .food-name{color:#ffffff;text-shadow:0 0 12px rgba(0,242,255,.5)}
+    .food-serving{font-family:'Roboto Mono',monospace;font-size:9px;color:#a0aec0;letter-spacing:.8px;margin-top:2px}
+    .food-card.active .food-serving{color:#7dd3fc}
+    .food-macros{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+    .macro-chip{font-family:'Roboto Mono',monospace;font-size:8px;padding:3px 8px;border-radius:6px;letter-spacing:.5px;font-weight:700}
+
+    /* Right panel */
+    .food-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0}
+    .food-kcal{font-family:'Orbitron',monospace;font-size:12px;font-weight:900;color:#a0aec0;white-space:nowrap;transition:color .2s}
+    .food-card.active .food-kcal{color:#00e5ff;text-shadow:0 0 12px rgba(0,229,255,.7)}
+
+    /* Add button (inactive cards) */
+    .add-btn{padding:8px 14px;border-radius:10px;border:1px solid;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;touch-action:manipulation;white-space:nowrap}
+    .add-btn:active{transform:scale(.9);opacity:.8}
+
+    /* Qty controls */
+    .qty-row{display:flex;align-items:center;gap:7px}
+    .qty-btn{width:36px;height:36px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;line-height:1;border:none;flex-shrink:0;font-family:'Orbitron',monospace;touch-action:manipulation;transition:opacity .1s,transform .1s}
+    .qty-btn:active{transform:scale(.78);opacity:.7}
+    .qty-btn.minus{background:rgba(255,77,109,.2);color:#ff6b84;border:1px solid rgba(255,77,109,.42)}
+    .qty-btn.plus{background:rgba(0,229,255,.18);color:#00e5ff;border:1px solid rgba(0,229,255,.45)}
+    .qty-num{min-width:30px;text-align:center;font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:#ffffff}
+
+    /* Gram input */
+    .gram-row{display:flex;align-items:center;gap:5px}
+    .gram-input{width:60px;padding:6px 5px;background:rgba(0,0,0,.52);border:1px solid rgba(0,229,255,.42);border-radius:9px;color:#00e5ff;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;text-align:center;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s,box-shadow .2s;touch-action:manipulation}
+    .gram-input:focus{border-color:rgba(0,229,255,.78);box-shadow:0 0 16px rgba(0,229,255,.25)}
+    .gram-unit{font-family:'Roboto Mono',monospace;font-size:11px;color:#ffffff;letter-spacing:1px;font-weight:700}
+
+    /* Mode toggle */
+    .card-bottom{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+    .mode-label-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .mode-section-label{font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;color:#ffffff;letter-spacing:1px;white-space:nowrap;flex-shrink:0}
+    .mode-toggle{display:flex;gap:8px;flex:1}
+    .mode-btn{flex:1;padding:11px 12px;border-radius:12px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;border:2px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#ffffff;cursor:pointer;transition:all .18s;min-height:48px;display:flex;align-items:center;justify-content:center;gap:7px;touch-action:manipulation}
+    .mode-btn:active{transform:scale(.94);opacity:.85}
+    .mode-btn.on{background:rgba(0,229,255,.18);border-color:#00e5ff;color:#00e5ff;box-shadow:0 0 16px rgba(0,229,255,.3),inset 0 0 10px rgba(0,229,255,.06)}
+    .mode-btn-icon{font-size:18px;line-height:1;flex-shrink:0}
+    .mode-btn-text{display:flex;flex-direction:column;line-height:1.25;text-align:left}
+    .mode-btn-main{font-size:14px;font-weight:700;letter-spacing:.2px}
+    .mode-btn-sub{font-size:10px;opacity:.8;font-family:'Roboto Mono',monospace;letter-spacing:.3px}
+    .cal-per-100{font-family:'Roboto Mono',monospace;font-size:11px;color:#ffffff;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);border-radius:8px;padding:4px 10px;align-self:flex-start;font-weight:600}
+
+    /* Totals */
+    .totals-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .total-cell{text-align:center}
+    .total-val{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;line-height:1}
+    .total-unit{font-family:'Roboto Mono',monospace;font-size:8px;color:#a0aec0;letter-spacing:1px;margin-top:3px}
+    .total-label{font-family:'Roboto Mono',monospace;font-size:8px;letter-spacing:1.5px;margin-top:2px;text-transform:uppercase;color:#cbd5e0}
+
+    /* Selected list */
+    .selected-section{margin-bottom:14px}
+    .selected-list{display:flex;flex-direction:column;gap:6px}
+    .selected-item{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);border-radius:12px;gap:8px;animation:slideDown .2s ease}
+    .selected-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;color:#ffffff;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .selected-qty{font-family:'Roboto Mono',monospace;font-size:9px;color:#a0aec0;white-space:nowrap}
+    .selected-kcal{font-family:'Orbitron',monospace;font-size:10px;color:#00e5ff;white-space:nowrap;text-shadow:0 0 8px rgba(0,229,255,.5)}
+
+    /* Smart msg */
+    .smart-msg{border-radius:12px;padding:11px 16px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:2px;text-align:center;transition:all .4s}
+
+    /* Notes btn */
+    .notes-btn{width:52px;height:52px;border-radius:14px;border:1px solid rgba(0,229,255,.3);background:rgba(0,229,255,.1);color:#00e5ff;cursor:pointer;font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .2s;gap:2px}
+    .notes-btn-label{font-family:'Roboto Mono',monospace;font-size:7px;letter-spacing:1px;color:#00e5ff;font-weight:700;text-transform:uppercase}
+    .notes-btn:active{transform:scale(.88)}
+    .notes-btn:hover{background:rgba(0,229,255,.18);box-shadow:0 0 20px rgba(0,229,255,.3)}
+
+    /* ── STICKY BOTTOM NUTRITION PANEL ── */
+    .sticky-nutrition{position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(6,6,12,.96);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border-top:1px solid rgba(0,229,255,.22);padding:10px 16px 12px;box-shadow:0 -8px 40px rgba(0,0,0,.7),0 -1px 0 rgba(0,229,255,.08);animation:stickyIn .3s ease}
+    .sticky-nutrition::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.5),transparent)}
+    .sticky-macros{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+    .sticky-macro-item{text-align:center;padding:5px 4px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+    .sticky-macro-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;line-height:1}
+    .sticky-macro-label{font-family:'Roboto Mono',monospace;font-size:7px;letter-spacing:1.2px;color:#a0aec0;text-transform:uppercase;margin-top:2px}
+    .sticky-actions{display:flex;gap:8px;align-items:center}
+    .sticky-progress{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+    .sticky-progress-fill{height:100%;border-radius:2px;transition:width .55s cubic-bezier(.34,1.4,.64,1)}
+    .sticky-reset-btn{padding:10px 22px;border-radius:30px;font-family:'Orbitron',monospace;font-weight:700;font-size:10px;letter-spacing:2px;border:1px solid rgba(255,77,109,.45);background:rgba(255,77,109,.12);color:#ff6b84;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+    .sticky-reset-btn:active{transform:scale(.93)}
+    .sticky-reset-btn:hover{background:rgba(255,77,109,.2);box-shadow:0 0 16px rgba(255,77,109,.3)}
+
+    /* Reset btn (hidden when sticky panel visible, kept for fallback) */
+    .reset-btn{display:none}
+    .count-badge{display:inline-flex;align-items:center;justify-content:center;background:rgba(0,229,255,.18);border:1px solid rgba(0,229,255,.38);border-radius:10px;padding:1px 8px;font-family:'Orbitron',monospace;font-size:10px;color:#00e5ff;margin-left:8px}
+
+    /* No results */
+    .no-results{text-align:center;padding:36px 16px;color:#a0aec0;font-family:'Roboto Mono',monospace;font-size:12px;letter-spacing:1.5px}
+    .no-results-icon{font-size:36px;margin-bottom:12px;opacity:.6}
+
+    /* Onboarding */
+    .onboard-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px 40px;background:#06060a;animation:fadeIn .5s ease;position:relative;overflow:hidden}
+    .onboard-wrap::before{content:'';position:absolute;top:-10%;left:-10%;width:70%;height:70%;background:radial-gradient(ellipse,#00e5ff0e 0%,transparent 70%);pointer-events:none}
+    .onboard-wrap::after{content:'';position:absolute;bottom:-10%;right:-10%;width:60%;height:60%;background:radial-gradient(ellipse,#7c3aed0c 0%,transparent 70%);pointer-events:none}
+    .onboard-card{width:100%;max-width:420px;background:rgba(255,255,255,.04);border:1px solid rgba(0,229,255,.22);border-radius:24px;padding:28px 22px 26px;box-shadow:0 0 60px rgba(0,229,255,.1),inset 0 1px 0 rgba(255,255,255,.07);position:relative;overflow:hidden;animation:borderGlow 3s ease-in-out infinite}
+    .onboard-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.6),transparent)}
+    .ob-label{font-family:'Roboto Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#ffffff;text-transform:uppercase;margin-bottom:6px}
+    .ob-input{width:100%;padding:11px 14px;background:rgba(0,0,0,.42);border:1px solid rgba(0,229,255,.18);border-radius:10px;color:#ffffff;font-family:'Roboto Mono',monospace;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+    .ob-input:focus{border-color:rgba(0,229,255,.5);box-shadow:0 0 16px rgba(0,229,255,.14)}
+    .ob-select-row{display:flex;gap:8px}
+    .ob-select-btn{flex:1;padding:10px 4px;border-radius:10px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.5px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#ffffff;text-transform:uppercase;transition:all .2s;min-height:44px}
+    .ob-select-btn.sel{background:rgba(0,229,255,.14);border-color:rgba(0,229,255,.5);color:#00e5ff;box-shadow:0 0 16px rgba(0,229,255,.18)}
+    .ob-cta{width:100%;padding:15px;border-radius:12px;cursor:pointer;font-family:'Orbitron',monospace;font-weight:700;font-size:13px;letter-spacing:3px;border:1px solid rgba(0,229,255,.45);background:rgba(0,229,255,.14);color:#00e5ff;box-shadow:0 0 28px rgba(0,229,255,.18);transition:all .2s;margin-top:4px}
+    .ob-cta:active{transform:scale(.97)}
+    .ob-error{font-size:11px;color:#fc8181;letter-spacing:1px;font-family:'Roboto Mono',monospace;margin-top:4px}
+
+    /* How-to guide */
+    @keyframes fadeSlideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    .howto-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 18px 36px;background:#06060a;animation:fadeIn .4s ease;position:relative;overflow:hidden}
+    .howto-wrap::before{content:'';position:absolute;top:-10%;left:-10%;width:70%;height:70%;background:radial-gradient(ellipse,#7c3aed10 0%,transparent 70%);pointer-events:none}
+    .howto-wrap::after{content:'';position:absolute;bottom:-10%;right:-10%;width:60%;height:60%;background:radial-gradient(ellipse,#00e5ff0e 0%,transparent 70%);pointer-events:none}
+    .howto-card{width:100%;max-width:420px;background:rgba(255,255,255,.04);border:1px solid rgba(0,229,255,.2);border-radius:24px;padding:26px 20px 24px;box-shadow:0 0 60px rgba(0,229,255,.08),inset 0 1px 0 rgba(255,255,255,.07);position:relative;overflow:hidden}
+    .howto-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.6),transparent)}
+    .howto-step{display:flex;align-items:flex-start;gap:14px;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);animation:fadeSlideUp .4s ease both}
+    .howto-step:nth-child(1){animation-delay:.05s}
+    .howto-step:nth-child(2){animation-delay:.12s}
+    .howto-step:nth-child(3){animation-delay:.19s}
+    .howto-step:nth-child(4){animation-delay:.26s}
+    .howto-icon{font-size:28px;line-height:1;flex-shrink:0;margin-top:2px}
+    .howto-step-body{flex:1}
+    .howto-step-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#ffffff;margin-bottom:5px;text-transform:uppercase}
+    .howto-step-desc{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;color:#ffffff;line-height:1.5}
+    .howto-highlight{display:inline-block;background:rgba(0,229,255,.15);border:1px solid rgba(0,229,255,.35);border-radius:6px;padding:1px 7px;color:#00e5ff;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;margin:0 2px}
+    .howto-cta{width:100%;padding:15px;border-radius:12px;cursor:pointer;font-family:'Orbitron',monospace;font-weight:700;font-size:13px;letter-spacing:3px;border:1px solid rgba(0,229,255,.45);background:rgba(0,229,255,.14);color:#00e5ff;box-shadow:0 0 28px rgba(0,229,255,.18);transition:all .2s;margin-top:4px}
+    .howto-cta:active{transform:scale(.97)}
+    .welcome-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;width:calc(100% - 32px);max-width:420px;background:rgba(6,6,14,.97);border:1px solid rgba(0,229,255,.36);border-radius:18px;padding:16px 18px;backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);box-shadow:0 0 60px rgba(0,229,255,.2),0 16px 40px rgba(0,0,0,.7)}
+    .toast-entering{animation:toastIn .5s cubic-bezier(.34,1.2,.64,1) forwards}
+    .toast-leaving{animation:toastOut .4s ease forwards}
+
+    /* Notes modal */
+    .modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:flex-end;animation:fadeIn .2s ease}
+    .notes-sheet{width:100%;max-width:500px;margin:0 auto;background:linear-gradient(170deg,#0d1117 0%,#080810 100%);border:1px solid rgba(0,229,255,.22);border-bottom:none;border-radius:22px 22px 0 0;padding:8px 18px 40px;box-shadow:0 -24px 80px rgba(0,229,255,.1),0 -4px 40px rgba(0,0,0,.7);animation:slideUp .32s cubic-bezier(.34,1.15,.64,1);position:relative;overflow:hidden}
+    .notes-sheet::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.6),transparent)}
+    .notes-textarea{width:100%;height:172px;background:rgba(0,0,0,.46);border:1px solid rgba(0,229,255,.15);border-radius:12px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:500;padding:12px 14px;resize:none;outline:none;line-height:1.65;transition:border-color .2s}
+    .notes-textarea:focus{border-color:rgba(0,229,255,.42)}
+    .notes-textarea::placeholder{color:#718096}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef, useCallback } = React;
+
+/* ══════════════════════════════════════════════════════════════
+   FOOD DATABASE
+   inputType:
+     "flexible" → supports BOTH pieces (default) AND grams
+     "fixed"    → pieces only, NO gram input whatsoever
+   calPer100g: required for "flexible" foods
+══════════════════════════════════════════════════════════════ */
+const FOODS = {
+  /* ── BREAKFAST ── */
+  idli:           {name:"Idli",              serving:"1 piece",     cal:39,  pro:0.8, carb:8,   fat:0.2, cat:"Breakfast", inputType:"flexible", calPer100g:58,  pieceLabel:"pcs"},
+  dosa:           {name:"Plain Dosa",         serving:"1 piece",     cal:112, pro:2.5, carb:18,  fat:3.2, cat:"Breakfast", inputType:"flexible", calPer100g:168, pieceLabel:"pcs"},
+  masala_dosa:    {name:"Masala Dosa",        serving:"1 piece",     cal:168, pro:3.2, carb:23,  fat:7.0, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"pcs"},
+  upma:           {name:"Upma",              serving:"1 bowl",      cal:180, pro:3.5, carb:28,  fat:5.0, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"bowls"},
+  poha:           {name:"Poha",              serving:"1 bowl",      cal:158, pro:3.0, carb:30,  fat:2.5, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"bowls"},
+  oats:           {name:"Oats (cooked)",     serving:"1 bowl",      cal:154, pro:5.4, carb:28,  fat:2.5, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"bowls"},
+  white_bread:    {name:"White Bread",       serving:"1 slice",     cal:68,  pro:2.2, carb:12,  fat:0.9, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"slices"},
+  brown_bread:    {name:"Brown Bread",       serving:"1 slice",     cal:62,  pro:2.4, carb:11,  fat:0.8, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"slices"},
+  poori:          {name:"Poori",             serving:"1 piece",     cal:145, pro:2.0, carb:18,  fat:7.0, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"pcs"},
+  bonda:          {name:"Bonda",             serving:"1 piece",     cal:95,  pro:2.0, carb:11,  fat:5.0, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"pcs"},
+  cornflakes:     {name:"Cornflakes + Milk", serving:"1 bowl",      cal:180, pro:5.5, carb:34,  fat:2.5, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"bowls"},
+  uttapam:        {name:"Uttapam",           serving:"1 piece",     cal:118, pro:3.0, carb:18,  fat:3.5, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"pcs"},
+  paratha:        {name:"Plain Paratha",     serving:"1 piece",     cal:180, pro:3.5, carb:25,  fat:7.5, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"pcs"},
+  aloo_paratha:   {name:"Aloo Paratha",      serving:"1 piece",     cal:230, pro:4.5, carb:32,  fat:9.5, cat:"Breakfast", inputType:"fixed",                    pieceLabel:"pcs"},
+
+  /* ── FRUIT ── */
+  banana:         {name:"Banana",            serving:"1 medium",    cal:89,  pro:1.1, carb:23,  fat:0.3, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"pcs"},
+  apple:          {name:"Apple",             serving:"1 medium",    cal:95,  pro:0.5, carb:25,  fat:0.3, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"pcs"},
+  orange:         {name:"Orange",            serving:"1 medium",    cal:62,  pro:1.2, carb:15,  fat:0.2, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"pcs"},
+  mango:          {name:"Mango",             serving:"1 cup",       cal:107, pro:0.8, carb:28,  fat:0.4, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"cups"},
+  watermelon:     {name:"Watermelon",        serving:"1 slice",     cal:46,  pro:0.9, carb:11,  fat:0.2, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"slices"},
+  grapes:         {name:"Grapes",            serving:"1 cup",       cal:104, pro:1.1, carb:27,  fat:0.2, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"cups"},
+  papaya:         {name:"Papaya",            serving:"1 cup",       cal:55,  pro:0.9, carb:14,  fat:0.2, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"cups"},
+  guava:          {name:"Guava",             serving:"1 medium",    cal:37,  pro:1.4, carb:8,   fat:0.5, cat:"Fruit",     inputType:"fixed",                    pieceLabel:"pcs"},
+
+  /* ── VEG MAINS ── */
+  rice:           {name:"Cooked Rice",       serving:"1 cup",       cal:206, pro:4.2, carb:45,  fat:0.4, cat:"Veg Mains", inputType:"flexible", calPer100g:130, pieceLabel:"cups"},
+  roti:           {name:"Roti / Chapati",    serving:"1 piece",     cal:104, pro:3.5, carb:18,  fat:2.5, cat:"Veg Mains", inputType:"flexible", calPer100g:297, pieceLabel:"pcs"},
+  butter_naan:    {name:"Butter Naan",       serving:"1 piece",     cal:310, pro:8.5, carb:47,  fat:9.0, cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"pcs"},
+  dal:            {name:"Dal (Plain)",       serving:"1 bowl",      cal:115, pro:7.5, carb:16,  fat:1.5, cat:"Veg Mains", inputType:"flexible", calPer100g:76,  pieceLabel:"bowls"},
+  tomato_dal:     {name:"Tomato Dal",        serving:"1 bowl",      cal:130, pro:7.0, carb:18,  fat:2.5, cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  rasam:          {name:"Rasam",             serving:"1 bowl",      cal:60,  pro:1.5, carb:10,  fat:1.5, cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  sambar:         {name:"Sambar",            serving:"1 bowl",      cal:95,  pro:4.5, carb:14,  fat:2.5, cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  rajma:          {name:"Rajma",             serving:"1 bowl",      cal:170, pro:9.0, carb:24,  fat:2.5, cat:"Veg Mains", inputType:"flexible", calPer100g:127, pieceLabel:"bowls"},
+  chole:          {name:"Chole",             serving:"1 bowl",      cal:210, pro:8.5, carb:30,  fat:6.0, cat:"Veg Mains", inputType:"flexible", calPer100g:164, pieceLabel:"bowls"},
+  beans_curry:    {name:"Beans Curry",       serving:"1 bowl",      cal:145, pro:5.0, carb:18,  fat:6.0, cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  veg_curry:      {name:"Veg Curry",         serving:"1 bowl",      cal:120, pro:2.5, carb:14,  fat:6.5, cat:"Veg Mains", inputType:"flexible", calPer100g:80,  pieceLabel:"bowls"},
+  mixed_veg:      {name:"Mixed Veg",         serving:"1 bowl",      cal:130, pro:3.5, carb:16,  fat:7.0, cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  palak_paneer:   {name:"Palak Paneer",      serving:"1 bowl",      cal:220, pro:11,  carb:8,   fat:16,  cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  shahi_paneer:   {name:"Shahi Paneer",      serving:"1 bowl",      cal:280, pro:10,  carb:12,  fat:22,  cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  kadai_paneer:   {name:"Kadai Paneer",      serving:"1 bowl",      cal:255, pro:12,  carb:10,  fat:19,  cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"bowls"},
+  paneer:         {name:"Paneer (Plain)",    serving:"100g",        cal:265, pro:18,  carb:3,   fat:20,  cat:"Veg Mains", inputType:"flexible", calPer100g:265, pieceLabel:"100g"},
+  curd:           {name:"Curd (Plain)",      serving:"1 cup",       cal:150, pro:9,   carb:11,  fat:7,   cat:"Veg Mains", inputType:"fixed",                    pieceLabel:"cups"},
+  soya_chunks:    {name:"Soya Chunks",       serving:"50g dry",     cal:170, pro:26,  carb:16,  fat:0.5, cat:"Veg Mains", inputType:"flexible", calPer100g:340, pieceLabel:"50g srv"},
+
+  /* ── NON-VEG ── */
+  butter_chicken: {name:"Butter Chicken",    serving:"1 bowl",      cal:290, pro:25,  carb:8,   fat:18,  cat:"Non-Veg",   inputType:"fixed",                    pieceLabel:"bowls"},
+  chicken_curry:  {name:"Chicken Curry",     serving:"1 bowl",      cal:220, pro:27,  carb:5,   fat:10,  cat:"Non-Veg",   inputType:"flexible", calPer100g:150, pieceLabel:"bowls"},
+  chicken_fry:    {name:"Chicken Fry",       serving:"1 piece",     cal:155, pro:14,  carb:4,   fat:9,   cat:"Non-Veg",   inputType:"flexible", calPer100g:215, pieceLabel:"pcs"},
+  egg_curry:      {name:"Egg Curry",         serving:"1 bowl",      cal:200, pro:14,  carb:8,   fat:13,  cat:"Non-Veg",   inputType:"fixed",                    pieceLabel:"bowls"},
+  boiled_egg:     {name:"Boiled Egg",        serving:"1 egg",       cal:78,  pro:6.3, carb:0.6, fat:5.3, cat:"Non-Veg",   inputType:"fixed",                    pieceLabel:"eggs"},
+  omelette:       {name:"Omelette",          serving:"2 eggs",      cal:190, pro:13,  carb:1,   fat:14,  cat:"Non-Veg",   inputType:"fixed",                    pieceLabel:"pcs"},
+  fish_curry:     {name:"Fish Curry",        serving:"1 bowl",      cal:200, pro:22,  carb:5,   fat:10,  cat:"Non-Veg",   inputType:"flexible", calPer100g:100, pieceLabel:"bowls"},
+  fish_fry:       {name:"Fish Fry",          serving:"1 piece",     cal:180, pro:18,  carb:5,   fat:9,   cat:"Non-Veg",   inputType:"fixed",                    pieceLabel:"pcs"},
+  mutton_curry:   {name:"Mutton Curry",      serving:"1 bowl",      cal:320, pro:25,  carb:6,   fat:22,  cat:"Non-Veg",   inputType:"flexible", calPer100g:194, pieceLabel:"bowls"},
+  prawn_curry:    {name:"Prawn Curry",       serving:"1 bowl",      cal:180, pro:20,  carb:5,   fat:9,   cat:"Non-Veg",   inputType:"fixed",                    pieceLabel:"bowls"},
+
+  /* ── PROTEIN / DAIRY ── */
+  whey_protein:   {name:"Whey Protein",      serving:"1 scoop 30g", cal:120, pro:24,  carb:3,   fat:1.5, cat:"Protein",   inputType:"fixed",                    pieceLabel:"scoops"},
+  peanut_butter:  {name:"Peanut Butter",     serving:"2 tbsp",      cal:188, pro:7.8, carb:6.4, fat:16,  cat:"Protein",   inputType:"fixed",                    pieceLabel:"srv"},
+  peanuts:        {name:"Peanuts",           serving:"1 handful",   cal:166, pro:7.5, carb:6,   fat:14,  cat:"Protein",   inputType:"fixed",                    pieceLabel:"handfuls"},
+  almonds:        {name:"Almonds",           serving:"10 pieces",   cal:70,  pro:2.5, carb:2,   fat:6,   cat:"Protein",   inputType:"fixed",                    pieceLabel:"10-pcs"},
+  whole_eggs:     {name:"Whole Eggs",        serving:"1 egg",       cal:78,  pro:6.3, carb:0.6, fat:5.3, cat:"Protein",   inputType:"fixed",                    pieceLabel:"eggs"},
+  egg_whites:     {name:"Egg Whites",        serving:"1 white",     cal:17,  pro:3.6, carb:0.2, fat:0.1, cat:"Protein",   inputType:"fixed",                    pieceLabel:"whites"},
+  ghee:           {name:"Ghee",              serving:"1 tsp",       cal:45,  pro:0,   carb:0,   fat:5,   cat:"Protein",   inputType:"fixed",                    pieceLabel:"tsps"},
+  cheese:         {name:"Processed Cheese",  serving:"1 slice",     cal:70,  pro:4.5, carb:0.5, fat:5.5, cat:"Protein",   inputType:"fixed",                    pieceLabel:"slices"},
+  milk:           {name:"Full-Fat Milk",     serving:"1 glass",     cal:150, pro:8,   carb:11,  fat:8,   cat:"Protein",   inputType:"fixed",                    pieceLabel:"glasses"},
+  paneer_raw:     {name:"Paneer (raw)",      serving:"50g",         cal:133, pro:9,   carb:1.5, fat:10,  cat:"Protein",   inputType:"flexible", calPer100g:265, pieceLabel:"50g"},
+
+  /* ── SNACKS / DRINKS ── */
+  tea:            {name:"Tea (w/ milk)",     serving:"1 cup",       cal:35,  pro:1,   carb:5,   fat:1,   cat:"Snacks",    inputType:"fixed",                    pieceLabel:"cups"},
+  coffee:         {name:"Coffee (w/ milk)",  serving:"1 cup",       cal:40,  pro:1.5, carb:5,   fat:1.5, cat:"Snacks",    inputType:"fixed",                    pieceLabel:"cups"},
+  milk_glass:     {name:"Cow Milk",          serving:"1 glass",     cal:120, pro:6,   carb:9,   fat:5,   cat:"Snacks",       inputType:"fixed",                     pieceLabel:"glasses"},
+  cold_drink:     {name:"Cold Drink (Cola)",  serving:"250ml can",   cal:105, pro:0,   carb:26.8,fat:0,   cat:"Drinks",       inputType:"flexible", calPer100g:42,   pieceLabel:"cans"},
+  biscuits:       {name:"Biscuits",          serving:"4 pieces",    cal:190, pro:2.5, carb:28,  fat:8,   cat:"Snacks",       inputType:"fixed",                     pieceLabel:"4-pcs"},
+  chips:          {name:"Potato Chips",      serving:"1 small bag", cal:130, pro:1.8, carb:13,  fat:8.5, cat:"Snacks",       inputType:"fixed",                     pieceLabel:"bags"},
+  burger:         {name:"Burger",            serving:"1 piece",     cal:380, pro:17,  carb:42,  fat:18,  cat:"Fast Food",    inputType:"fixed",                     pieceLabel:"pcs"},
+  pizza:          {name:"Pizza (slice)",     serving:"1 slice",     cal:270, pro:11,  carb:32,  fat:12,  cat:"Fast Food",    inputType:"fixed",                     pieceLabel:"slices"},
+  ice_cream:      {name:"Ice Cream",         serving:"1 scoop 50g", cal:110, pro:3,   carb:24,  fat:11,  cat:"Snacks",       inputType:"flexible", calPer100g:220,  pieceLabel:"scoops"},
+  maggi:          {name:"Maggi Noodles",     serving:"1 pack",      cal:330, pro:7,   carb:48,  fat:13,  cat:"Snacks",       inputType:"fixed",                     pieceLabel:"packs"},
+  vada:           {name:"Medu Vada",         serving:"1 piece",     cal:125, pro:3.5, carb:14,  fat:6.5, cat:"Snacks",       inputType:"fixed",                     pieceLabel:"pcs"},
+  lassi_sweet:    {name:"Sweet Lassi",       serving:"300ml glass", cal:360, pro:9.2, carb:39.7,fat:13.4,cat:"Drinks",       inputType:"flexible", calPer100g:114,  pieceLabel:"glasses"},
+
+  /* ── DAIRY & SPREADS ── */
+  amul_butter:    {name:"Amul Butter",       serving:"1 tsp 10g",   cal:72,  pro:0.05,carb:0,   fat:8,   cat:"Dairy",        inputType:"flexible", calPer100g:722,  pieceLabel:"tsps"},
+  amul_cheese:    {name:"Amul Cheese Slice", serving:"1 slice 16g", cal:50,  pro:3.2, carb:0.2, fat:4,   cat:"Dairy",        inputType:"flexible", calPer100g:311,  pieceLabel:"slices"},
+
+  /* ── STREET FOOD ── */
+  vada_pav:       {name:"Vada Pav",          serving:"1 piece",     cal:197, pro:6.6, carb:33.9,fat:4,   cat:"Street Food",  inputType:"fixed",                     pieceLabel:"pcs"},
+  pav_bhaji:      {name:"Pav Bhaji",         serving:"1 plate 400g",cal:400, pro:9.4, carb:57.9,fat:14.5,cat:"Street Food",  inputType:"flexible", calPer100g:200,  pieceLabel:"plates"},
+  pani_puri:      {name:"Pani Puri",         serving:"7 puri plate",cal:329, pro:5.4, carb:29.6,fat:5.2, cat:"Street Food",  inputType:"fixed",                     pieceLabel:"plates"},
+  masala_puri:    {name:"Masala Puri",       serving:"1 puri",      cal:47,  pro:0.7, carb:3.9, fat:3.2, cat:"Street Food",  inputType:"fixed",                     pieceLabel:"puris"},
+  aloo_cutlet:    {name:"Aloo Cutlet",       serving:"1 piece 50g", cal:82,  pro:1.2, carb:12.5,fat:2.7, cat:"Street Food",  inputType:"flexible", calPer100g:165,  pieceLabel:"pcs"},
+  samosa_sf:      {name:"Samosa",            serving:"1 piece 50g", cal:95,  pro:1.5, carb:18,  fat:6,   cat:"Street Food",  inputType:"flexible", calPer100g:190,  pieceLabel:"pcs"},
+  bread_pakora:   {name:"Bread Pakora/Bonda",serving:"1 piece 70g", cal:120, pro:3,   carb:15,  fat:5,   cat:"Street Food",  inputType:"fixed",                     pieceLabel:"pcs"},
+  poha_plate:     {name:"Poha Plate",        serving:"1 plate 200g",cal:180, pro:2.25,carb:25,  fat:7.9, cat:"Street Food",  inputType:"flexible", calPer100g:110,  pieceLabel:"plates"},
+
+  /* ── DRINKS ── */
+  lassi_salted:   {name:"Salted Lassi",      serving:"250ml glass", cal:176, pro:9,   carb:5,   fat:9.6, cat:"Drinks",       inputType:"fixed",                     pieceLabel:"glasses"},
+  buttermilk:     {name:"Buttermilk (Chaas)",serving:"200ml glass", cal:117, pro:4.3, carb:5,   fat:6.5, cat:"Drinks",       inputType:"fixed",                     pieceLabel:"glasses"},
+  filter_coffee:  {name:"Filter Coffee",     serving:"100ml cup",   cal:78,  pro:2.25,carb:7.5, fat:3.22,cat:"Drinks",       inputType:"fixed",                     pieceLabel:"cups"},
+  fruit_juice:    {name:"Fruit Juice",       serving:"250ml glass", cal:140, pro:0.5, carb:33,  fat:0.2, cat:"Drinks",       inputType:"flexible", calPer100g:55,   pieceLabel:"glasses"},
+  monster_sf:     {name:"Monster (Sugar Free)",serving:"250ml can", cal:10,  pro:0,   carb:6,   fat:0,   cat:"Drinks",       inputType:"fixed",                     pieceLabel:"cans"},
+  monster_orig:   {name:"Monster Energy",    serving:"250ml can",   cal:120, pro:0,   carb:30,  fat:0,   cat:"Drinks",       inputType:"fixed",                     pieceLabel:"cans"},
+  red_bull:       {name:"Red Bull",          serving:"250ml can",   cal:112, pro:0,   carb:27,  fat:0,   cat:"Drinks",       inputType:"fixed",                     pieceLabel:"cans"},
+
+  /* ── FAST FOOD ── */
+  french_fries:   {name:"French Fries",      serving:"100g pack",   cal:274, pro:3.48,carb:35.66,fat:14.06,cat:"Fast Food",  inputType:"flexible", calPer100g:274,  pieceLabel:"packs"},
+  shawarma:       {name:"Shawarma",          serving:"1 wrap 200g", cal:546, pro:66,  carb:34,  fat:12,  cat:"Fast Food",    inputType:"flexible", calPer100g:273,  pieceLabel:"wraps"},
+  paneer_pizza:   {name:"Paneer Pizza",      serving:"1 slice 100g",cal:285, pro:12,  carb:32,  fat:11,  cat:"Fast Food",    inputType:"flexible", calPer100g:285,  pieceLabel:"slices"},
+
+  /* ── RICE DISHES ── */
+  veg_biryani:    {name:"Veg Biryani",       serving:"1 plate 250g",cal:525, pro:12.5,carb:80,  fat:17.5,cat:"Rice Dishes",  inputType:"flexible", calPer100g:210,  pieceLabel:"plates"},
+  chicken_biryani2:{name:"Chicken Biryani",  serving:"1 plate 250g",cal:575, pro:30,  carb:62.5,fat:20,  cat:"Rice Dishes",  inputType:"flexible", calPer100g:230,  pieceLabel:"plates"},
+  mutton_biryani: {name:"Mutton Biryani",    serving:"1 plate 250g",cal:650, pro:32.5,carb:65,  fat:27.5,cat:"Rice Dishes",  inputType:"flexible", calPer100g:260,  pieceLabel:"plates"},
+  egg_biryani:    {name:"Egg Biryani",       serving:"1 plate 250g",cal:550, pro:25,  carb:70,  fat:20,  cat:"Rice Dishes",  inputType:"flexible", calPer100g:220,  pieceLabel:"plates"},
+  veg_pulao:      {name:"Veg Pulao",         serving:"1 plate 250g",cal:438, pro:10,  carb:75,  fat:12.5,cat:"Rice Dishes",  inputType:"flexible", calPer100g:175,  pieceLabel:"plates"},
+  fried_rice:     {name:"Fried Rice",        serving:"1 plate 250g",cal:475, pro:12.5,carb:70,  fat:15,  cat:"Rice Dishes",  inputType:"flexible", calPer100g:190,  pieceLabel:"plates"},
+
+  /* ── INDO-CHINESE ── */
+  veg_manchurian: {name:"Veg Manchurian",    serving:"1 plate 200g",cal:320, pro:8,   carb:40,  fat:12,  cat:"Indo-Chinese", inputType:"flexible", calPer100g:160,  pieceLabel:"plates"},
+  paneer_manchurian:{name:"Paneer Manchurian",serving:"1 plate 200g",cal:400,pro:20,  carb:36,  fat:18,  cat:"Indo-Chinese", inputType:"flexible", calPer100g:200,  pieceLabel:"plates"},
+  paneer_65:      {name:"Paneer 65",         serving:"1 plate 200g",cal:480, pro:24,  carb:28,  fat:28,  cat:"Indo-Chinese", inputType:"flexible", calPer100g:240,  pieceLabel:"plates"},
+  chicken_65:     {name:"Chicken 65",        serving:"1 plate 200g",cal:500, pro:40,  carb:24,  fat:30,  cat:"Indo-Chinese", inputType:"flexible", calPer100g:250,  pieceLabel:"plates"},
+
+  /* ── CHOCOLATE ── */
+  dark_choc:      {name:"Dark Chocolate",    serving:"10g square",  cal:60,  pro:0.8, carb:4.6, fat:4.3, cat:"Chocolate",    inputType:"flexible", calPer100g:598,  pieceLabel:"squares"},
+  milk_choc:      {name:"Milk Chocolate",    serving:"10g piece",   cal:54,  pro:0.7, carb:5.8, fat:3.0, cat:"Chocolate",    inputType:"flexible", calPer100g:540,  pieceLabel:"pcs"},
+  white_choc:     {name:"White Chocolate",   serving:"10g piece",   cal:54,  pro:0.6, carb:5.9, fat:3.2, cat:"Chocolate",    inputType:"flexible", calPer100g:539,  pieceLabel:"pcs"},
+  rs2_choc:       {name:"₹2 Chocolate",      serving:"1 piece 10g", cal:52,  pro:0.7, carb:6,   fat:3,   cat:"Chocolate",    inputType:"fixed",                     pieceLabel:"pcs"},
+
+  /* ── SNACKS ── */
+  papad:          {name:"Papad (plain)",     serving:"1 papad 10g", cal:38,  pro:2.5, carb:6,   fat:0.2, cat:"Snacks",       inputType:"flexible", calPer100g:375,  pieceLabel:"papads"},
+  masala_papad:   {name:"Masala Papad",      serving:"1 papad 10g", cal:40,  pro:1.5, carb:5.5, fat:1,   cat:"Snacks",       inputType:"flexible", calPer100g:400,  pieceLabel:"papads"},
+  banana_chips:   {name:"Banana Chips",      serving:"50g handful", cal:300, pro:3,   carb:29,  fat:20,  cat:"Snacks",       inputType:"flexible", calPer100g:600,  pieceLabel:"handfuls"},
+
+  /* ── SOUTH INDIAN ── */
+  pongal:         {name:"Ven Pongal",        serving:"1 bowl 200g", cal:280, pro:6,   carb:40,  fat:10,  cat:"Breakfast",    inputType:"flexible", calPer100g:140,  pieceLabel:"bowls"},
+  pesarattu:      {name:"Pesarattu",         serving:"1 piece",     cal:90,  pro:4.5, carb:12,  fat:2.5, cat:"Breakfast",    inputType:"fixed",                     pieceLabel:"pcs"},
+  rava_dosa:      {name:"Rava Dosa",         serving:"1 piece",     cal:140, pro:3,   carb:20,  fat:5,   cat:"Breakfast",    inputType:"fixed",                     pieceLabel:"pcs"},
+  mysore_pak:     {name:"Mysore Pak",        serving:"1 piece 30g", cal:150, pro:2,   carb:18,  fat:8,   cat:"Snacks",       inputType:"flexible", calPer100g:500,  pieceLabel:"pcs"},
+
+  /* ── TELANGANA / ANDHRA ── */
+  gongura_mutton: {name:"Gongura Mutton",    serving:"1 bowl 200g", cal:340, pro:28,  carb:6,   fat:22,  cat:"Non-Veg",      inputType:"flexible", calPer100g:170,  pieceLabel:"bowls"},
+  pesara_pappu:   {name:"Pesara Pappu (Moong Dal)", serving:"1 bowl 200g", cal:220, pro:14, carb:30, fat:3, cat:"Veg Mains", inputType:"flexible", calPer100g:110, pieceLabel:"bowls"},
+  gutti_vankaya:  {name:"Gutti Vankaya",     serving:"1 bowl 200g", cal:230, pro:4,   carb:18,  fat:16,  cat:"Veg Mains",    inputType:"fixed",                     pieceLabel:"bowls"},
+  jolada_rotti:   {name:"Jolada Rotti (Sorghum)",serving:"1 piece", cal:95,  pro:3.2, carb:19,  fat:1,   cat:"Veg Mains",    inputType:"fixed",                     pieceLabel:"pcs"},
+  mirchi_bajji:   {name:"Mirchi Bajji",      serving:"1 piece 60g", cal:120, pro:2.5, carb:15,  fat:6,   cat:"Street Food",  inputType:"flexible", calPer100g:200,  pieceLabel:"pcs"},
+  punugulu:       {name:"Punugulu",          serving:"5 pieces",    cal:150, pro:4,   carb:18,  fat:7,   cat:"Street Food",  inputType:"fixed",                     pieceLabel:"5-pcs"},
+  gongura_pachadi:{name:"Gongura Pachadi",   serving:"2 tbsp 30g",  cal:45,  pro:1,   carb:3,   fat:3,   cat:"Veg Mains",    inputType:"flexible", calPer100g:150,  pieceLabel:"srv"},
+
+  /* ── SWEETS / DESSERTS ── */
+  gulab_jamun:    {name:"Gulab Jamun",       serving:"1 piece 40g", cal:150, pro:2,   carb:25,  fat:5,   cat:"Snacks",       inputType:"flexible", calPer100g:375,  pieceLabel:"pcs"},
+  rasgulla:       {name:"Rasgulla",          serving:"1 piece 50g", cal:105, pro:2.5, carb:22,  fat:1,   cat:"Snacks",       inputType:"flexible", calPer100g:210,  pieceLabel:"pcs"},
+  kheer:          {name:"Rice Kheer",        serving:"1 bowl 150g", cal:210, pro:5,   carb:35,  fat:6,   cat:"Snacks",       inputType:"flexible", calPer100g:140,  pieceLabel:"bowls"},
+  halwa:          {name:"Sooji Halwa",       serving:"1 cup 100g",  cal:280, pro:3.5, carb:38,  fat:12,  cat:"Snacks",       inputType:"flexible", calPer100g:280,  pieceLabel:"cups"},
+  ladoo:          {name:"Besan Ladoo",       serving:"1 piece 30g", cal:135, pro:2.5, carb:17,  fat:6.5, cat:"Snacks",       inputType:"flexible", calPer100g:450,  pieceLabel:"pcs"},
+
+  /* ── NUTS & SEEDS ── */
+  walnuts:        {name:"Walnuts",           serving:"10g (4 halves)",cal:65, pro:1.5, carb:1.4, fat:6.5, cat:"Protein",     inputType:"flexible", calPer100g:654,  pieceLabel:"10g"},
+  cashews:        {name:"Cashews",           serving:"10 pieces 15g",cal:87,  pro:2.9, carb:5,   fat:7,   cat:"Protein",     inputType:"flexible", calPer100g:580,  pieceLabel:"10-pcs"},
+  pistachios:     {name:"Pistachios",        serving:"20 pieces 15g",cal:85,  pro:3,   carb:4.5, fat:7,   cat:"Protein",     inputType:"flexible", calPer100g:566,  pieceLabel:"20-pcs"},
+  flaxseeds:      {name:"Flaxseeds",         serving:"1 tbsp 10g",  cal:55,  pro:1.9, carb:3,   fat:4.3, cat:"Protein",     inputType:"flexible", calPer100g:534,  pieceLabel:"tbsp"},
+  chia_seeds:     {name:"Chia Seeds",        serving:"1 tbsp 12g",  cal:58,  pro:2,   carb:5,   fat:3.7, cat:"Protein",     inputType:"flexible", calPer100g:486,  pieceLabel:"tbsp"},
+
+  /* ── DALS / LEGUMES ── */
+  chana_dal:      {name:"Chana Dal",         serving:"1 bowl 200g", cal:270, pro:14,  carb:42,  fat:4,   cat:"Veg Mains",    inputType:"flexible", calPer100g:135,  pieceLabel:"bowls"},
+  moong_dal:      {name:"Moong Dal",         serving:"1 bowl 200g", cal:200, pro:13,  carb:30,  fat:1,   cat:"Veg Mains",    inputType:"flexible", calPer100g:100,  pieceLabel:"bowls"},
+  urad_dal:       {name:"Urad Dal",          serving:"1 bowl 200g", cal:240, pro:16,  carb:36,  fat:1.5, cat:"Veg Mains",    inputType:"flexible", calPer100g:120,  pieceLabel:"bowls"},
+  masoor_dal:     {name:"Masoor Dal",        serving:"1 bowl 200g", cal:200, pro:13,  carb:30,  fat:1,   cat:"Veg Mains",    inputType:"flexible", calPer100g:100,  pieceLabel:"bowls"},
+
+  /* ── VEGETABLES ── */
+  boiled_potato:  {name:"Boiled Potato",     serving:"1 medium 150g",cal:130,pro:3,   carb:30,  fat:0.2, cat:"Veg Mains",   inputType:"flexible", calPer100g:87,   pieceLabel:"pcs"},
+  sweet_potato:   {name:"Sweet Potato",      serving:"1 medium 150g",cal:130,pro:2,   carb:30,  fat:0.1, cat:"Veg Mains",   inputType:"flexible", calPer100g:86,   pieceLabel:"pcs"},
+  broccoli:       {name:"Broccoli (cooked)", serving:"1 cup 150g",  cal:55,  pro:3.7, carb:11,  fat:0.6, cat:"Veg Mains",    inputType:"flexible", calPer100g:35,   pieceLabel:"cups"},
+  spinach:        {name:"Spinach (cooked)",  serving:"1 cup 180g",  cal:41,  pro:5.4, carb:6.8, fat:0.5, cat:"Veg Mains",    inputType:"flexible", calPer100g:23,   pieceLabel:"cups"},
+  cucumber:       {name:"Cucumber",          serving:"1 medium 200g",cal:30, pro:1.3, carb:6,   fat:0.2, cat:"Veg Mains",    inputType:"flexible", calPer100g:15,   pieceLabel:"pcs"},
+  tomato:         {name:"Tomato",            serving:"1 medium 120g",cal:22, pro:1,   carb:4.8, fat:0.2, cat:"Veg Mains",    inputType:"flexible", calPer100g:18,   pieceLabel:"pcs"},
+  onion:          {name:"Onion",             serving:"1 medium 110g",cal:44, pro:1.2, carb:10,  fat:0.1, cat:"Veg Mains",    inputType:"flexible", calPer100g:40,   pieceLabel:"pcs"},
+
+  /* ── EGGS / CHICKEN (DETAILED) ── */
+  chicken_breast: {name:"Chicken Breast (grilled)",serving:"100g",  cal:165, pro:31,  carb:0,   fat:3.6, cat:"Non-Veg",     inputType:"flexible", calPer100g:165,  pieceLabel:"100g"},
+  chicken_thigh:  {name:"Chicken Thigh (cooked)",  serving:"100g",  cal:209, pro:26,  carb:0,   fat:11,  cat:"Non-Veg",     inputType:"flexible", calPer100g:209,  pieceLabel:"100g"},
+  scrambled_egg:  {name:"Scrambled Eggs",    serving:"2 eggs",      cal:200, pro:14,  carb:1.5, fat:15,  cat:"Non-Veg",      inputType:"fixed",                     pieceLabel:"pcs"},
+  egg_bhurji:     {name:"Egg Bhurji",        serving:"2 eggs",      cal:220, pro:14,  carb:4,   fat:16,  cat:"Non-Veg",      inputType:"fixed",                     pieceLabel:"pcs"},
+
+  /* ── PROTEIN FOODS ── */
+  tofu:           {name:"Tofu (firm)",       serving:"100g",        cal:76,  pro:8,   carb:2,   fat:4.5, cat:"Protein",     inputType:"flexible", calPer100g:76,   pieceLabel:"100g"},
+  greek_yogurt:   {name:"Greek Yogurt",      serving:"150g cup",    cal:90,  pro:15,  carb:5,   fat:0.5, cat:"Protein",     inputType:"flexible", calPer100g:60,   pieceLabel:"cups"},
+  sprouts:        {name:"Mixed Sprouts",     serving:"1 cup 100g",  cal:90,  pro:8,   carb:14,  fat:0.5, cat:"Protein",     inputType:"flexible", calPer100g:90,   pieceLabel:"cups"},
+  skimmed_milk:   {name:"Skimmed Milk",      serving:"1 glass 250ml",cal:83, pro:8,   carb:12,  fat:0.5, cat:"Protein",     inputType:"fixed",                     pieceLabel:"glasses"},
+
+  /* ── ROTI VARIANTS ── */
+  makki_roti:     {name:"Makki Roti",        serving:"1 piece",     cal:120, pro:2.5, carb:20,  fat:3.5, cat:"Veg Mains",    inputType:"fixed",                     pieceLabel:"pcs"},
+  bajra_roti:     {name:"Bajra Roti",        serving:"1 piece",     cal:110, pro:3,   carb:19,  fat:2.5, cat:"Veg Mains",    inputType:"fixed",                     pieceLabel:"pcs"},
+  missi_roti:     {name:"Missi Roti",        serving:"1 piece",     cal:140, pro:5,   carb:22,  fat:4,   cat:"Veg Mains",    inputType:"fixed",                     pieceLabel:"pcs"},
+};
+
+const CAT_ORDER = ["Breakfast","Fruit","Veg Mains","Non-Veg","Rice Dishes","Indo-Chinese","Street Food","Fast Food","Drinks","Dairy","Chocolate","Protein","Snacks"];
+const CAT_META  = {
+  "Breakfast":    {icon:"🥣", color:"#00e5ff"},
+  "Fruit":        {icon:"🍎", color:"#39ff14"},
+  "Veg Mains":    {icon:"🍛", color:"#22d3ee"},
+  "Non-Veg":      {icon:"🍗", color:"#ff6b35"},
+  "Rice Dishes":  {icon:"🍚", color:"#fbbf24"},
+  "Indo-Chinese": {icon:"🥢", color:"#f472b6"},
+  "Street Food":  {icon:"🌮", color:"#fb923c"},
+  "Fast Food":    {icon:"🍟", color:"#ef4444"},
+  "Drinks":       {icon:"🥛", color:"#60a5fa"},
+  "Dairy":        {icon:"🧈", color:"#fde68a"},
+  "Chocolate":    {icon:"🍫", color:"#a78bfa"},
+  "Protein":      {icon:"💪", color:"#a78bfa"},
+  "Snacks":       {icon:"🍕", color:"#f472b6"},
+};
+
+const ACTIVITY = {
+  light:    {label:"Light",    factor:1.375},
+  moderate: {label:"Moderate", factor:1.55},
+  active:   {label:"Active",   factor:1.725},
+};
+
+const LS_PROFILE = "indi_profile_v5";
+const LS_WELCOME = "indi_welcome_v5";
+const notesKey   = () => "indi_notes_" + new Date().toISOString().slice(0,10);
+
+function calcMaintenance({gender,weight,height,age,activity}) {
+  let bmr;
+  if(gender==="male")        bmr = 10*weight + 6.25*height - 5*age + 5;
+  else if(gender==="female") bmr = 10*weight + 6.25*height - 5*age - 161;
+  else                       bmr = 10*weight + 6.25*height - 5*age - 78;
+  return Math.round(bmr * ACTIVITY[activity].factor);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NUTRITION CALCULATION
+   Flexible foods:
+     piece mode → nutrition = per_serving_values × qty
+     gram mode  → nutrition = per_100g × (grams / 100)
+   Fixed foods:
+     piece mode only → nutrition = per_serving_values × qty
+══════════════════════════════════════════════════════════════ */
+function calcNutrition(food, entry) {
+  if (!entry || entry.qty <= 0) return {cal:0, pro:0, carb:0, fat:0};
+
+  // Gram mode: only available for "flexible" foods
+  if (entry.mode === "grams" && food.inputType === "flexible" && food.calPer100g != null) {
+    const r = entry.qty / 100;
+    const calTotal = food.calPer100g * r;
+    // Derive macros proportionally from base serving values
+    const macroRatio = food.cal > 0 ? calTotal / food.cal : 0;
+    return {
+      cal:  Math.round(calTotal),
+      pro:  Math.round(food.pro  * macroRatio * 10) / 10,
+      carb: Math.round(food.carb * macroRatio * 10) / 10,
+      fat:  Math.round(food.fat  * macroRatio * 10) / 10,
+    };
+  }
+
+  // Piece mode (default for all foods)
+  const r = entry.qty;
+  return {
+    cal:  Math.round(food.cal  * r),
+    pro:  Math.round(food.pro  * r * 10) / 10,
+    carb: Math.round(food.carb * r * 10) / 10,
+    fat:  Math.round(food.fat  * r * 10) / 10,
+  };
+}
+
+function qtyLabel(food, entry) {
+  if (!entry || entry.qty <= 0) return "0";
+  if (entry.mode === "grams") return entry.qty + "g";
+  return entry.qty + " " + (food.pieceLabel || "srv");
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RING
+══════════════════════════════════════════════════════════════ */
+function Ring({value, target, color, label, size, stroke}) {
+  size   = size   || 80;
+  stroke = stroke || 7;
+  const r    = (size - stroke * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const pct  = target > 0 ? Math.min(value / target, 1) : 0;
+  const off  = circ * (1 - pct);
+  const dc   = (target > 0 && value > target) ? "#ff4d6d" : color;
+  return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+      <div style={{position:"relative",width:size,height:size}}>
+        <svg width={size} height={size} style={{transform:"rotate(-90deg)",display:"block"}}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={stroke}/>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={dc} strokeWidth={stroke}
+            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off}
+            style={{transition:"stroke-dashoffset .55s cubic-bezier(.34,1.4,.64,1),stroke .3s",
+                    filter:"drop-shadow(0 0 5px "+dc+"99)"}}/>
+        </svg>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <span style={{fontFamily:"'Orbitron',monospace",fontWeight:900,fontSize:size>=90?17:11,color:dc,lineHeight:1,textShadow:"0 0 10px "+dc+"cc"}}>
+            {Math.round(value)}
+          </span>
+          {size>=90&&(<span style={{fontSize:8,color:"#a0aec0",letterSpacing:1,fontFamily:"'Roboto Mono',monospace",marginTop:2}}>/{target}</span>)}
+        </div>
+      </div>
+      <span style={{fontSize:9,letterSpacing:2,color:"#a0aec0",fontFamily:"'Roboto Mono',monospace",fontWeight:700,textTransform:"uppercase"}}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FOOD CARD
+   State is fully owned by the parent (Dashboard).
+   Key fixes:
+   - Card tap activates ONLY via the "Add" button, not the whole card div
+     → eliminates event-bubbling race on mobile between card click and +/- buttons
+   - +/- buttons use onPointerDown for instant response (no 300ms tap delay)
+   - Grams mode always available for flexible foods once active
+══════════════════════════════════════════════════════════════ */
+function FoodCard({item, entry, onSetEntry, meta}) {
+  const isActive   = !!entry && entry.qty > 0;
+  const isFlexible = item.inputType === "flexible";
+  const curMode    = entry ? entry.mode : "pieces";
+  const curQty     = entry ? entry.qty  : 0;
+  const nutrition  = calcNutrition(item, entry);
+
+  // Activate card at 1 piece — called only from the dedicated Add button
+  const handleAdd = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!isActive) onSetEntry({mode:"pieces", qty:1});
+  };
+
+  // ± stepper: pieces step by 1, grams step by 10
+  // Uses onClick only — using both onPointerDown + onClick caused double-fire bug
+  const adjust = (delta) => (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const step = curMode === "grams" ? 10 : 1;
+    const next = Math.max(0, curQty + delta * step);
+    if (next === 0) { onSetEntry(null); return; }
+    onSetEntry({mode:curMode, qty:next});
+  };
+
+  // Direct gram text field
+  const onGramType = (e) => {
+    const g = parseInt(e.target.value) || 0;
+    if (g <= 0) { onSetEntry(null); return; }
+    onSetEntry({mode:"grams", qty:g});
+  };
+
+  // Switch mode (pieces ↔ grams)
+  const switchMode = (mode) => (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSetEntry({mode, qty: mode === "grams" ? 100 : 1});
+  };
+
+  const kcalHint = isActive
+    ? nutrition.cal + " kcal"
+    : (isFlexible ? item.calPer100g + " /100g" : item.cal + " kcal");
+
+  return (
+    <div
+      className={"food-card" + (isActive ? " active" : "")}
+      style={isActive ? {borderColor:meta.color+"55", boxShadow:"0 0 22px "+meta.color+"14"} : {}}
+    >
+      {/* ── TOP ROW ── */}
+      <div className="card-top">
+        <div className="food-info">
+          <div className="food-name">{item.name}</div>
+          <div className="food-serving">{item.serving}</div>
+          <div className="food-macros">
+            <span className="macro-chip" style={{background:"rgba(167,139,250,.16)",color:"#c4b5fd"}}>P {item.pro}g</span>
+            <span className="macro-chip" style={{background:"rgba(251,191,36,.14)",color:"#fcd34d"}}>C {item.carb}g</span>
+            <span className="macro-chip" style={{background:"rgba(52,211,153,.14)",color:"#6ee7b7"}}>F {item.fat}g</span>
+          </div>
+        </div>
+
+        <div className="food-right">
+          <div className="food-kcal">{kcalHint}</div>
+
+          {!isActive ? (
+            /* ── INACTIVE: big tap-friendly ADD button ── */
+            <button
+              className="add-btn"
+              style={{borderColor:meta.color+"66",color:meta.color,background:"rgba("+hexToRgb(meta.color)+",.1)"}}
+              onClick={handleAdd}
+            >+ ADD</button>
+          ) : curMode === "grams" ? (
+            /* ── ACTIVE GRAM MODE ── */
+            <div className="gram-row">
+              <button className="qty-btn minus"
+                onClick={adjust(-1)}>−</button>
+              <input
+                className="gram-input"
+                type="number" min="10" step="10"
+                value={curQty}
+                onChange={onGramType}
+                onClick={e=>e.stopPropagation()}
+              />
+              <span className="gram-unit">g</span>
+              <button className="qty-btn plus"
+                style={{borderColor:meta.color+"66",color:meta.color}}
+                onClick={adjust(1)}>+</button>
+            </div>
+          ) : (
+            /* ── ACTIVE PIECE MODE ── */
+            <div className="qty-row">
+              <button className="qty-btn minus"
+                onClick={adjust(-1)}>−</button>
+              <div className="qty-num" style={{color:meta.color,textShadow:"0 0 8px "+meta.color+"88"}}>
+                {curQty}
+              </div>
+              <button className="qty-btn plus"
+                style={{borderColor:meta.color+"66",color:meta.color}}
+                onClick={adjust(1)}>+</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── MODE TOGGLE — shows for ALL flexible foods once active ── */}
+      {isActive && isFlexible && (
+        <div className="card-bottom">
+          <div className="mode-label-row">
+            <span className="mode-section-label">Track by:</span>
+            <div className="mode-toggle">
+              <button
+                className={"mode-btn"+(curMode==="pieces"?" on":"")}
+                onClick={switchMode("pieces")}>
+                <span className="mode-btn-icon">🔢</span>
+                <span className="mode-btn-text">
+                  <span className="mode-btn-main">{item.pieceLabel}</span>
+                  <span className="mode-btn-sub">per piece</span>
+                </span>
+              </button>
+              <button
+                className={"mode-btn"+(curMode==="grams"?" on":"")}
+                onClick={switchMode("grams")}>
+                <span className="mode-btn-icon">⚖️</span>
+                <span className="mode-btn-text">
+                  <span className="mode-btn-main">Grams</span>
+                  <span className="mode-btn-sub">by weight</span>
+                </span>
+              </button>
+            </div>
+          </div>
+          {curMode==="grams"&&(
+            <span className="cal-per-100">{item.calPer100g} kcal / 100g</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Helper: convert hex color to r,g,b for rgba()
+function hexToRgb(hex) {
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return isNaN(r)?'0,229,255':`${r},${g},${b}`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ONBOARDING
+══════════════════════════════════════════════════════════════ */
+function OnboardScreen({onDone}) {
+  const [_goal,    _setGoal]    = useState("");
+  const [_gender,  _setGender]  = useState("");
+  const [_age,     _setAge]     = useState("");
+  const [_height,  _setHeight]  = useState("");
+  const [_weight,  _setWeight]  = useState("");
+  const [_activity,_setActivity]= useState("");
+  const [_err,     _setErr]     = useState("");
+
+  const GOALS = [
+    {key:"lose",    label:"Lose",    icon:"📉", desc:"Deficit"},
+    {key:"maintain",label:"Maintain",icon:"⚖️",  desc:"Maintenance"},
+    {key:"gain",    label:"Gain",    icon:"📈", desc:"Surplus"},
+  ];
+
+  const preview = (() => {
+    const a=parseInt(_age),h=parseInt(_height),w=parseFloat(_weight);
+    if(_goal&&_gender&&a>9&&h>99&&w>19&&_activity){
+      const m=calcMaintenance({gender:_gender,weight:w,height:h,age:a,activity:_activity});
+      return {maintenance:m, target:_goal==="lose"?m-300:_goal==="gain"?m+300:m};
+    }
+    return null;
+  })();
+
+  const submit=()=>{
+    const a=parseInt(_age),h=parseInt(_height),w=parseFloat(_weight);
+    if(!_goal)           return _setErr("Please select a goal");
+    if(!_gender)         return _setErr("Please select biological sex");
+    if(!a||a<10||a>100)  return _setErr("Enter valid age (10–100)");
+    if(!h||h<100||h>250) return _setErr("Enter height in cm (100–250)");
+    if(!w||w<20||w>300)  return _setErr("Enter weight in kg (20–300)");
+    if(!_activity)       return _setErr("Please select activity level");
+    _setErr("");
+    const maintenance=calcMaintenance({gender:_gender,weight:w,height:h,age:a,activity:_activity});
+    const targetCal=_goal==="lose"?maintenance-300:_goal==="gain"?maintenance+300:maintenance;
+    const profile={goal:_goal,gender:_gender,age:a,height:h,weight:w,activity:_activity,maintenance,targetCal};
+    try{localStorage.setItem(LS_PROFILE,JSON.stringify(profile));}catch{}
+    onDone(profile);
+  };
+
+  return(
+    <div className="onboard-wrap">
+      <div className="onboard-card">
+        <div style={{textAlign:"center",marginBottom:22}}>
+          <div style={{fontFamily:"'Orbitron',monospace",fontWeight:900,fontSize:22,lineHeight:1}}>
+            <span style={{color:"#fff"}}>INDI</span><span style={{color:"#f97316"}}>Calorie</span><span style={{color:"#fff"}}>Tracker</span>
+          </div>
+          <div style={{fontFamily:"'Roboto Mono',monospace",fontSize:9,letterSpacing:3,color:"#ffffff",textTransform:"uppercase",marginTop:7}}>Setup Your Profile</div>
+          <div style={{width:40,height:2,margin:"10px auto 0",background:"linear-gradient(90deg,transparent,#00e5ff,transparent)"}}/>
+        </div>
+        <div style={{marginBottom:16}}>
+          <div className="ob-label">Your Goal</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+            {GOALS.map(g=>(
+              <button key={g.key} className={"ob-select-btn"+(_goal===g.key?" sel":"")} onClick={()=>_setGoal(g.key)}>
+                <div style={{fontSize:20,marginBottom:4}}>{g.icon}</div>
+                <div>{g.label}</div>
+                <div style={{fontSize:10,color:"#ffffff",marginTop:2,textTransform:"none",letterSpacing:0,opacity:.9}}>{g.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{marginBottom:16}}>
+          <div className="ob-label">Biological Sex</div>
+          <div className="ob-select-row">
+            {[["male","♂ Male"],["female","♀ Female"],["other","⚧ Other"]].map(([k,lbl])=>(
+              <button key={k} className={"ob-select-btn"+(_gender===k?" sel":"")} onClick={()=>_setGender(k)}>{lbl}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+          {[
+            {label:"Age (yrs)",val:_age,    fn:_setAge,    ph:""},
+            {label:"Height cm",val:_height, fn:_setHeight, ph:""},
+            {label:"Weight kg",val:_weight, fn:_setWeight, ph:"",step:"0.1"},
+          ].map(f=>(
+            <div key={f.label}>
+              <div className="ob-label">{f.label}</div>
+              <input className="ob-input" type="number" value={f.val} placeholder={f.ph} step={f.step||"1"} onChange={e=>f.fn(e.target.value)}/>
+            </div>
+          ))}
+        </div>
+        <div style={{marginBottom:18}}>
+          <div className="ob-label">Activity Level</div>
+          <div className="ob-select-row">
+            {Object.entries(ACTIVITY).map(([k,v])=>(
+              <button key={k} className={"ob-select-btn"+(_activity===k?" sel":"")} onClick={()=>_setActivity(k)}>
+                {v.label}
+                <div style={{fontSize:10,color:"#ffffff",opacity:.85,marginTop:2,letterSpacing:0,textTransform:"none"}}>×{v.factor}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        {preview&&(
+          <div style={{marginBottom:14,padding:"10px 12px",borderRadius:12,background:"rgba(249,115,22,.09)",border:"1px solid rgba(249,115,22,.26)",textAlign:"center"}}>
+            <div style={{fontFamily:"'Roboto Mono',monospace",fontSize:9,color:"#ffffff",letterSpacing:2,marginBottom:3}}>YOUR DAILY TARGET</div>
+            <div style={{fontFamily:"'Orbitron',monospace",fontSize:26,fontWeight:900,color:"#f97316",textShadow:"0 0 18px rgba(249,115,22,.5)"}}>
+              {preview.target}<span style={{fontSize:11,color:"#ffffff",marginLeft:5}}>kcal</span>
+            </div>
+            <div style={{fontSize:9,color:"#a0aec0",letterSpacing:1,marginTop:3,fontFamily:"'Roboto Mono',monospace"}}>
+              Maintenance {preview.maintenance} kcal{_goal==="lose"?" · −300 deficit":_goal==="gain"?" · +300 surplus":" · balanced"}
+            </div>
+          </div>
+        )}
+        {_err&&<div className="ob-error" style={{marginBottom:8}}>⚠ {_err}</div>}
+        <button className="ob-cta" onClick={submit}>LAUNCH TRACKER →</button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HOW TO USE — ONBOARDING GUIDE
+══════════════════════════════════════════════════════════════ */
+function HowToUse({onDone}) {
+  const steps = [
+    {
+      icon: "🔍",
+      title: "Search for Food",
+      desc: <>Use the <span className="howto-highlight">Search Bar</span> at the top to instantly find any food — try typing "idli", "rice" or "egg". It searches across all categories in real time.</>
+    },
+    {
+      icon: "👆",
+      title: "Tap to Select",
+      desc: <>Tap any food card to select it. The <span className="howto-highlight">− and +</span> buttons let you adjust how many pieces or servings you had.</>
+    },
+    {
+      icon: "⚖️",
+      title: "Grams or Pieces",
+      desc: <>For many foods you can switch between <span className="howto-highlight">Pieces</span> (1 idli, 2 rotis…) and <span className="howto-highlight">Grams</span> (enter exact weight). Look for the toggle inside the food card.</>
+    },
+    {
+      icon: "📓",
+      title: "Daily Log (top right)",
+      desc: <>Tap the <span className="howto-highlight">📓 LOG</span> button in the top-right corner to open your daily notebook — write notes about meals, water intake, or how you feel.</>
+    },
+  ];
+  return (
+    <div className="howto-wrap">
+      <div className="howto-card">
+        <div style={{textAlign:"center",marginBottom:22}}>
+          <div style={{fontSize:32,marginBottom:8}}>👋</div>
+          <div style={{fontFamily:"'Orbitron',monospace",fontWeight:900,fontSize:18,color:"#ffffff",lineHeight:1.2,marginBottom:6}}>
+            HOW TO USE
+          </div>
+          <div style={{fontFamily:"'Roboto Mono',monospace",fontSize:10,letterSpacing:2,color:"#ffffff",textTransform:"uppercase"}}>
+            INDIOCALORIE TRACKER
+          </div>
+          <div style={{width:40,height:2,margin:"10px auto 0",background:"linear-gradient(90deg,transparent,#00e5ff,transparent)"}}/>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:22}}>
+          {steps.map((s,i)=>(
+            <div key={i} className="howto-step">
+              <div className="howto-icon">{s.icon}</div>
+              <div className="howto-step-body">
+                <div className="howto-step-title">{s.title}</div>
+                <div className="howto-step-desc">{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button className="howto-cta" onClick={onDone}>GOT IT — LET'S GO →</button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WELCOME TOAST
+══════════════════════════════════════════════════════════════ */
+function WelcomeToast({onDone}) {
+  const [phase,setPhase]=useState("toast-entering");
+  useEffect(()=>{
+    const t1=setTimeout(()=>setPhase("toast-leaving"),3800);
+    const t2=setTimeout(()=>onDone(),4400);
+    return()=>{clearTimeout(t1);clearTimeout(t2);};
+  },[]);
+  return(
+    <div className={"welcome-toast "+phase}>
+      <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+        <div style={{fontSize:26,lineHeight:1,marginTop:2,animation:"float 3s ease-in-out infinite"}}>🔥</div>
+        <div>
+          <div style={{fontFamily:"'Orbitron',monospace",fontSize:11,fontWeight:700,color:"#00e5ff",letterSpacing:2,marginBottom:6}}>SYSTEM ONLINE</div>
+          <div style={{fontFamily:"'Rajdhani',sans-serif",fontSize:15,fontWeight:600,color:"#e5e5e5",lineHeight:1.55}}>Track every bite. Own your results.</div>
+        </div>
+      </div>
+      <div style={{marginTop:10,height:2,borderRadius:1,background:"rgba(255,255,255,.07)",overflow:"hidden"}}>
+        <div style={{height:"100%",width:"100%",background:"linear-gradient(90deg,#00e5ff,#f97316)",animation:"progressBar 3.8s linear forwards"}}/>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NOTES MODAL
+══════════════════════════════════════════════════════════════ */
+function NotesModal({onClose}) {
+  const key=notesKey();
+  const [text,setText]=useState(()=>{try{return localStorage.getItem(key)||""}catch{return ""}});
+  const [saved,setSaved]=useState(false);
+  const taRef=useRef(null);
+  useEffect(()=>{setTimeout(()=>taRef.current&&taRef.current.focus(),300);},[]);
+  const save=()=>{try{localStorage.setItem(key,text);}catch{}setSaved(true);setTimeout(()=>setSaved(false),2000);};
+  const clear=()=>{setText("");try{localStorage.removeItem(key);}catch{}};
+  const dateStr=new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short",year:"numeric"}).toUpperCase();
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="notes-sheet">
+        <div style={{width:38,height:4,borderRadius:2,background:"rgba(255,255,255,.12)",margin:"12px auto 16px"}}/>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+          <div>
+            <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:900,color:"#00e5ff",letterSpacing:2,marginBottom:3}}>DAILY LOG</div>
+            <div style={{fontSize:9,color:"#a0aec0",letterSpacing:2,fontFamily:"'Roboto Mono',monospace"}}>{dateStr}</div>
+          </div>
+          <button onClick={onClose} style={{width:32,height:32,borderRadius:10,border:"1px solid rgba(255,255,255,.14)",background:"rgba(255,255,255,.07)",color:"#e2e8f0",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        </div>
+        <textarea ref={taRef} className="notes-textarea" value={text} onChange={e=>setText(e.target.value)} placeholder="Log meals, water, energy levels or thoughts for today…"/>
+        <div style={{display:"flex",gap:8,marginTop:10}}>
+          <button onClick={save} style={{flex:1,padding:"13px 0",borderRadius:12,cursor:"pointer",border:"1px solid "+(saved?"rgba(74,222,128,.45)":"rgba(0,229,255,.32)"),background:saved?"rgba(74,222,128,.09)":"rgba(0,229,255,.09)",color:saved?"#4ade80":"#00e5ff",fontFamily:"'Orbitron',monospace",fontSize:11,fontWeight:700,letterSpacing:2,transition:"all .3s"}}>
+            {saved?"✓ SAVED":"SAVE LOG"}
+          </button>
+          <button onClick={clear} style={{padding:"13px 16px",borderRadius:12,cursor:"pointer",border:"1px solid rgba(255,77,109,.26)",background:"rgba(255,77,109,.07)",color:"#ff4d6d",fontSize:11,fontFamily:"'Orbitron',monospace",letterSpacing:1,fontWeight:700}}>CLEAR</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD
+   
+   ✅ BUG FIX — Multiple item state isolation:
+   entries = { [foodKey]: {mode:"pieces"|"grams", qty:number} }
+   
+   setEntry(key, entry):
+     • Uses functional setState with spread: {...prev, [key]: entry}
+     • This NEVER overwrites other keys — each food is independent
+     • Removing one food: delete only that key, all others untouched
+     • Adding food A while B,C,D are selected: only A's key is added
+   
+   Why previous code broke: it wasn't actually broken in the setEntry
+   itself, but FoodCard's handleCardClick was defaulting some foods to
+   "grams" mode, and the mode-toggle was calling onSetEntry with a
+   fresh {mode,qty} which re-activated the card from 0, effectively
+   resetting — appearing to "deselect" other cards because a re-render
+   was wiping the visual state. Now FoodCard has NO local state at all.
+══════════════════════════════════════════════════════════════ */
+function Dashboard({profile}) {
+  const [entries,    setEntries]     = useState({});
+  const [activeTab,  setActiveTab]   = useState("All");
+  const [searchQ,    setSearchQ]     = useState("");
+  const [showNotes,  setShowNotes]   = useState(false);
+  const [showWelcome,setShowWelcome] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(()=>{
+    try{if(!localStorage.getItem(LS_WELCOME))setShowWelcome(true);}catch{}
+  },[]);
+
+  const welcomeDone=()=>{
+    setShowWelcome(false);
+    try{localStorage.setItem(LS_WELCOME,"1");}catch{}
+  };
+
+  /* ── THE ONLY PLACE ENTRIES STATE CHANGES ──────────────────
+     Spread operator guarantees all other keys are preserved.
+     This is the single source of truth for all food selections.
+  ────────────────────────────────────────────────────────── */
+  const setEntry = useCallback((key, entry) => {
+    setEntries(prev => {
+      const next = {...prev};            // copy ALL existing entries
+      if (!entry || entry.qty <= 0) {
+        delete next[key];                // remove ONLY this key
+      } else {
+        next[key] = entry;               // update ONLY this key
+      }
+      return next;
+    });
+  }, []);
+
+  /* ── Grouped & filtered food lists ── */
+  const grouped = useMemo(()=>{
+    const g={};
+    CAT_ORDER.forEach(c=>{g[c]=[];});
+    Object.entries(FOODS).forEach(([k,f])=>{if(g[f.cat])g[f.cat].push({key:k,...f});});
+    return g;
+  },[]);
+
+  const filteredGrouped = useMemo(()=>{
+    const q=searchQ.trim().toLowerCase();
+    const result={};
+    CAT_ORDER.forEach(cat=>{
+      const items=grouped[cat]||[];
+      result[cat]=q
+        ? items.filter(item=>item.name.toLowerCase().includes(q)||cat.toLowerCase().includes(q))
+        : items;
+    });
+    return result;
+  },[grouped,searchQ]);
+
+  const visibleCats = useMemo(()=>{
+    const cats=activeTab==="All"?CAT_ORDER:[activeTab];
+    if(searchQ.trim()) return cats.filter(c=>(filteredGrouped[c]||[]).length>0);
+    return cats;
+  },[activeTab,searchQ,filteredGrouped]);
+
+  /* ── Aggregate totals across all selected items ── */
+  const totals = useMemo(()=>{
+    let cal=0,pro=0,carb=0,fat=0;
+    Object.entries(entries).forEach(([k,entry])=>{
+      const f=FOODS[k]; if(!f)return;
+      const n=calcNutrition(f,entry);
+      cal+=n.cal; pro+=n.pro; carb+=n.carb; fat+=n.fat;
+    });
+    return {calories:Math.round(cal),protein:Math.round(pro),carbs:Math.round(carb),fat:Math.round(fat)};
+  },[entries]);
+
+  /* ── Smart message keyed to user's actual target ── */
+  const smartMsg = useMemo(()=>{
+    const {calories:c}=totals, t=profile.targetCal;
+    if(c===0) return {text:"SELECT FOODS TO BEGIN",color:"#6b7280",bg:"rgba(0,0,0,.2)",border:"rgba(255,255,255,.06)"};
+    const pct=c/t;
+    if(pct<0.7)  return {text:"⚡ LIKELY CALORIE DEFICIT",   color:"#00e5ff",bg:"rgba(0,229,255,.07)",  border:"rgba(0,229,255,.22)"};
+    if(pct<=1.1) return {text:"✅ ON TRACK FOR YOUR GOAL",    color:"#4ade80",bg:"rgba(74,222,128,.07)", border:"rgba(74,222,128,.22)"};
+    if(pct<=1.3) return {text:"⚠️ SLIGHTLY OVER TARGET",      color:"#fbbf24",bg:"rgba(251,191,36,.07)", border:"rgba(251,191,36,.22)"};
+    return           {text:"🔺 SIGNIFICANTLY OVER TARGET",   color:"#ff4d6d",bg:"rgba(255,77,109,.07)", border:"rgba(255,77,109,.22)"};
+  },[totals,profile.targetCal]);
+
+  const selectedItems = useMemo(()=>
+    Object.entries(entries).map(([k,entry])=>{
+      const f=FOODS[k]; if(!f)return null;
+      return {key:k,name:f.name,qty:qtyLabel(f,entry),cal:calcNutrition(f,entry).cal};
+    }).filter(Boolean)
+  ,[entries]);
+
+  const totalItems=Object.keys(entries).length;
+  const totalSearchResults=visibleCats.reduce((s,c)=>s+(filteredGrouped[c]||[]).length,0);
+  const goalLabel={lose:"Fat Loss 📉",maintain:"Maintenance ⚖️",gain:"Muscle Gain 📈"}[profile.goal]||"";
+
+  return(
+    <div className="app-root">
+      {showWelcome&&<WelcomeToast onDone={welcomeDone}/>}
+
+      {/* ── Header ── */}
+      <div className="header">
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div>
+            <div className="brand">
+              <span style={{color:"#fff"}}>INDI</span>
+              <span style={{color:"#f97316"}}>Calorie</span>
+              <span style={{color:"#fff"}}>Tracker</span>
+            </div>
+            <div className="brand-sub">Indian Food Tracker</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:"'Orbitron',monospace",fontSize:11,fontWeight:700,color:"#f97316",textShadow:"0 0 10px rgba(249,115,22,.55)"}}>
+                {profile.targetCal} kcal
+              </div>
+              <div style={{fontFamily:"'Roboto Mono',monospace",fontSize:8,color:"#a0aec0",letterSpacing:.5}}>{goalLabel}</div>
+            </div>
+            <button className="notes-btn" onClick={()=>setShowNotes(true)}>📓<span className="notes-btn-label">LOG</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{padding:"12px 14px 130px",position:"relative",zIndex:1}}>
+
+        {/* ── Rings + Totals card ── */}
+        <div className="glass-card" style={{padding:"18px 16px 16px",marginBottom:14}}>
+          <div className="scan-line"/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingBottom:14,borderBottom:"1px solid rgba(255,255,255,.06)"}}>
+            <Ring value={totals.calories} target={profile.targetCal} color="#00e5ff" label="KCAL" size={100} stroke={9}/>
+            <div style={{display:"flex",gap:10}}>
+              <Ring value={totals.protein} target={Math.round(profile.targetCal*.25/4)} color="#a78bfa" label="PROTEIN" size={72} stroke={7}/>
+              <Ring value={totals.carbs}   target={Math.round(profile.targetCal*.45/4)} color="#fbbf24" label="CARBS"   size={72} stroke={7}/>
+              <Ring value={totals.fat}     target={Math.round(profile.targetCal*.30/9)} color="#34d399" label="FAT"     size={72} stroke={7}/>
+            </div>
+          </div>
+          <div className="totals-row" style={{marginTop:14}}>
+            {[
+              {label:"🔥 Calories",val:totals.calories,color:"#00e5ff",unit:"kcal"},
+              {label:"💪 Protein", val:totals.protein,  color:"#a78bfa",unit:"g"},
+              {label:"🍞 Carbs",   val:totals.carbs,    color:"#fbbf24",unit:"g"},
+              {label:"🥑 Fat",     val:totals.fat,      color:"#34d399",unit:"g"},
+            ].map(({label,val,color,unit})=>(
+              <div key={label} className="total-cell">
+                <div className="total-val" style={{color,textShadow:"0 0 10px "+color+"66"}}>{val}</div>
+                <div className="total-unit">{unit}</div>
+                <div className="total-label" style={{color:color+"cc"}}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="smart-msg" style={{marginTop:12,background:smartMsg.bg,border:"1px solid "+smartMsg.border,color:smartMsg.color,boxShadow:totals.calories>0?"0 0 14px "+smartMsg.color+"22":"none"}}>
+            {smartMsg.text}
+          </div>
+        </div>
+
+        {/* ── Selected foods summary ── */}
+        {selectedItems.length>0&&(
+          <div className="selected-section">
+            <div style={{fontFamily:"'Orbitron',monospace",fontSize:9,letterSpacing:3,color:"#a0aec0",textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+              SELECTED<span className="count-badge">{selectedItems.length}</span>
+            </div>
+            <div className="selected-list">
+              {selectedItems.map(item=>(
+                <div key={item.key} className="selected-item">
+                  <div className="selected-name">{item.name}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                    <div className="selected-qty">{item.qty}</div>
+                    <div className="selected-kcal">{item.cal} kcal</div>
+                    <button onClick={()=>setEntry(item.key,null)}
+                      style={{width:22,height:22,borderRadius:6,border:"1px solid rgba(255,77,109,.32)",background:"rgba(255,77,109,.09)",color:"#ff4d6d",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Search bar ── */}
+        <div className="search-wrap">
+          <span className="search-icon">🔍</span>
+          <input ref={searchRef} className="search-input" type="text"
+            placeholder="Search food… (idli, rice, paneer, dosa…)"
+            value={searchQ} onChange={e=>setSearchQ(e.target.value)}/>
+          {searchQ&&(
+            <button className="search-clear" onClick={()=>{setSearchQ("");searchRef.current&&searchRef.current.focus();}}>×</button>
+          )}
+        </div>
+
+        {/* ── Category tabs ── */}
+        {!searchQ&&(
+          <div className="tabs-row">
+            {["All",...CAT_ORDER].map(tab=>(
+              <button key={tab} className={"tab-btn"+(activeTab===tab?" active":"")} onClick={()=>setActiveTab(tab)}>
+                {tab==="All"?"⚡ All":(CAT_META[tab]?CAT_META[tab].icon+" ":"")+tab}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── No search results ── */}
+        {searchQ&&totalSearchResults===0&&(
+          <div className="no-results">
+            <div className="no-results-icon">🍽️</div>
+            <div>No results for "{searchQ}"</div>
+            <div style={{marginTop:6,fontSize:10,color:"#718096"}}>Try: idli, rice, egg, paneer…</div>
+          </div>
+        )}
+
+        {/* ── Food lists ── */}
+        {visibleCats.map(cat=>{
+          const items=filteredGrouped[cat]||[];
+          if(!items.length)return null;
+          const meta=CAT_META[cat]||{icon:"🍽",color:"#00e5ff"};
+          return(
+            <div key={cat}>
+              <div className="cat-head">
+                <span style={{fontSize:16}}>{meta.icon}</span>
+                <span className="cat-label" style={{color:meta.color}}>{cat}</span>
+                <div className="cat-line" style={{background:"linear-gradient(90deg,"+meta.color+"33,transparent)"}}/>
+              </div>
+              <div className="food-grid">
+                {items.map(item=>(
+                  <FoodCard
+                    key={item.key}
+                    item={item}
+                    entry={entries[item.key]||null}
+                    onSetEntry={entry=>setEntry(item.key,entry)}
+                    meta={meta}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Sticky Bottom Nutrition Panel ── */}
+      <div className="sticky-nutrition">
+        <div className="sticky-macros">
+          {[
+            {label:"🔥 KCAL",  val:totals.calories, color:"#00e5ff",  unit:"kcal"},
+            {label:"💪 PROT",  val:totals.protein,  color:"#a78bfa",  unit:"g"},
+            {label:"🍞 CARBS", val:totals.carbs,    color:"#fbbf24",  unit:"g"},
+            {label:"🥑 FAT",   val:totals.fat,      color:"#34d399",  unit:"g"},
+          ].map(({label,val,color,unit})=>(
+            <div key={label} className="sticky-macro-item">
+              <div className="sticky-macro-val" style={{color,textShadow:"0 0 8px "+color+"55"}}>{val}</div>
+              <div className="sticky-macro-label">{label}</div>
+            </div>
+          ))}
+        </div>
+        <div className="sticky-actions">
+          <div style={{flex:1}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+              <span style={{fontFamily:"'Roboto Mono',monospace",fontSize:8,color:"#a0aec0",letterSpacing:1}}>
+                {totals.calories} / {profile.targetCal} kcal
+              </span>
+              <span style={{fontFamily:"'Roboto Mono',monospace",fontSize:8,color:totals.calories>profile.targetCal?"#ff6b84":"#a0aec0",letterSpacing:1}}>
+                {Math.round((totals.calories/profile.targetCal)*100)}%
+              </span>
+            </div>
+            <div className="sticky-progress">
+              <div className="sticky-progress-fill" style={{
+                width:Math.min((totals.calories/profile.targetCal)*100,100)+"%",
+                background:totals.calories>profile.targetCal
+                  ?"linear-gradient(90deg,#fbbf24,#ff4d6d)"
+                  :totals.calories/profile.targetCal>0.85
+                  ?"linear-gradient(90deg,#00e5ff,#4ade80)"
+                  :"linear-gradient(90deg,#00e5ff,#a78bfa)",
+                boxShadow:totals.calories>0?"0 0 8px rgba(0,229,255,.4)":"none"
+              }}/>
+            </div>
+          </div>
+          <button className="sticky-reset-btn" onClick={()=>setEntries({})}>
+            RESET{totalItems>0&&<span className="count-badge">{totalItems}</span>}
+          </button>
+        </div>
+      </div>
+
+      {showNotes&&<NotesModal onClose={()=>setShowNotes(false)}/>}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   APP ROOT
+══════════════════════════════════════════════════════════════ */
+function App() {
+  const [profile,setProfile]=useState(()=>{
+    try{const raw=localStorage.getItem(LS_PROFILE);if(raw){const p=JSON.parse(raw);if(p&&p.targetCal)return p;}}catch{}
+    return null;
+  });
+  const [showHowTo,setShowHowTo]=useState(false);
+
+  const handleOnboardDone=(p)=>{
+    setProfile(p);
+    // Show how-to guide for first-time users
+    try{if(!localStorage.getItem("indi_howto_seen"))setShowHowTo(true);}catch{}
+  };
+  const handleHowToDone=()=>{
+    setShowHowTo(false);
+    try{localStorage.setItem("indi_howto_seen","1");}catch{}
+  };
+
+  if(!profile)return <OnboardScreen onDone={handleOnboardDone}/>;
+  if(showHowTo)return <HowToUse onDone={handleHowToDone}/>;
+  return <Dashboard profile={profile}/>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
