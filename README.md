@@ -28,21 +28,25 @@ Indi Calorie Tracker is a browser-based nutrition tracking application designed 
 
 ## 📸 Interface Preview
 
-### Main Screen
-![Main UI](indicalorietracker.ss1.png)
+### 1. User Profile & Goal Setup
+Users enter personal details like age, height, weight, gender, activity level, and fitness goal.  
+The system then calculates daily calorie targets based on this data.
 
-### Food Tracking
-![Food UI](indicalorietracker.ss2.png)
+![User Setup](indicalorietracker.ss1.png)
 
-### Macro View
-![Macros](indicalorietracker.ss3.png)
+---
 
-## 🛠 Tech Stack
+### 2. How to Use
+Step-by-step guide showing how to track food intake and understand calorie + macro flow.
 
-- HTML5 – Structure
-- CSS3 – Styling and UI design
-- JavaScript (ES6+) – Logic and calculations
-- Local Storage API – Data persistence
+![How to Use](indicalorietracker.ss2.png)
+
+---
+
+### 3. Main Dashboard (Food Tracking & Macros)
+Main working screen showing food selection, calorie tracking, and real-time macro breakdown (carbs, protein, fats).
+
+![Dashboard](indicalorietracker.ss3.png)
 
 ---
 
