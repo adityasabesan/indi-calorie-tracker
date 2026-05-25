@@ -35,10 +35,6 @@ Indi Calorie Tracker is a browser-based nutrition tracking application designed 
 
 ---
 
-## 📸 Interface Preview
-
----
-
 ## 🚧 Future Improvements
 
 - Backend integration for cloud sync and user accounts
